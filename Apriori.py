@@ -87,7 +87,7 @@ def generate_strong_rules(all_rules_by_level, min_conf=0.7):
         strong.extend([r for r in rules if r[2] >= min_conf])
     return strong
 
-# ────────────────────────── Pretty print ──────────────────────────
+# ────────────────────────── Print ──────────────────────────
 def _set_str(items):
     return '{' + ', '.join(items) + '}'
 
@@ -131,4 +131,5 @@ all_rules_by_level  = generate_all_rules(freq_sets, n_tx, T)
 strong_rules        = generate_strong_rules(all_rules_by_level, min_confidence)
 
 print_all_rules(all_rules_by_level, min_confidence)
+
 print_strong_rules(strong_rules)

@@ -1,5 +1,3 @@
-# Data Mining Scripts
-
 ## Description  
 This repository contains a collection of Python scripts implementing core data mining algorithms, developed with the assistance of **ChatGPT-4o**.
 

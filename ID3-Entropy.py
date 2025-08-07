@@ -24,11 +24,11 @@ BRANCH_SEPARATOR = f"{YELLOW}" + "┌" + "─" * 78 + "┐" + f"{RESET}"
 
 class DecisionTreeNode:
     def __init__(self, attribute=None, value=None, classification=None, depth=0):
-        self.attribute = attribute  # התכונה שמחלקת בצומת זה
-        self.value = value  # הערך של התכונה (אם זה לא השורש)
-        self.classification = classification  # הסיווג (אם זה עלה)
-        self.children = {}  # ילדים - מילון של ערכים לצמתים
-        self.depth = depth  # עומק בעץ
+        self.attribute = attribute 
+        self.value = value 
+        self.classification = classification  
+        self.children = {}  
+        self.depth = depth  
         self.is_leaf = False
         self.entropy = 0
         self.samples_count = 0
@@ -51,7 +51,7 @@ def calculate_entropy(series, verbose=False):
     entropy = 0
 
     if verbose:
-        clean_counts = {k: int(v) for k, v in counts.items()} # למחוק את ההערה למטה כדי להציג התפלגות
+        clean_counts = {k: int(v) for k, v in counts.items()} # Delete comment to display distribution
         #print(f"{WHITE}  התפלגות ערכי עמודת מטרה: {clean_counts}{RESET}")
 
     for val, count in counts.items():
@@ -88,7 +88,6 @@ def calculate_information_gain(df, attribute, target_column, target_entropy, ver
         conditional_entropy += weighted_entropy
 
     if verbose:
-        # הצגת כל התרומות בשורה אחת
         parts_str = " + ".join(entropy_parts)
         print(f"{GREEN}{BOLD}Entropy:{RESET} {parts_str} {GREEN}{BOLD}= {conditional_entropy:.4f}{RESET}")
 
@@ -101,7 +100,7 @@ def calculate_information_gain(df, attribute, target_column, target_entropy, ver
 
 
 def get_best_attribute(df, attributes, target_column, verbose=False):
-    # חישוב האנטרופיה של עמודת המטרה פעם אחת בלבד
+    # target attribute entropy
     target_entropy = calculate_entropy(df[target_column])
 
     if verbose:
@@ -134,17 +133,14 @@ def get_best_attribute(df, attributes, target_column, verbose=False):
 
 
 def is_pure(df, target_column):
-    """בודק אם הדאטה סט הוא טהור (כל הערכים זהים)"""
     return len(df[target_column].unique()) == 1
 
 
 def get_majority_class(df, target_column):
-    """מחזיר את הסיווג הרוב"""
     return df[target_column].mode()[0]
 
 
 def print_node_info(node, df, target_column, depth=0):
-    """מדפיס מידע על הצומת"""
     indent = "  " * depth
     branch_char = "├─" if depth > 0 else "┌─"
 
@@ -160,7 +156,6 @@ def print_node_info(node, df, target_column, depth=0):
 
 
 def categorize_branches_by_purity(df, best_attribute, target_column):
-    """מסווג את הענפים לטהורים ולא טהורים"""
     values = df[best_attribute].unique()
     pure_branches = []
     impure_branches = []
@@ -176,19 +171,16 @@ def categorize_branches_by_purity(df, best_attribute, target_column):
 
 
 def create_leaf_node(df, target_column, depth, value):
-    """יוצר צומת עלה מבלי להדפיס פלט מיותר"""
     node = DecisionTreeNode(depth=depth, value=value)
     node.classification = df[target_column].iloc[0]
     node.is_leaf = True
     node.samples_count = len(df)
     node.samples_distribution = dict(df[target_column].value_counts())
-    node.entropy = 0  # ענף טהור - אנטרופיה 0
+    node.entropy = 0  # pure branch - entropy is zero
     return node
 
 
 def build_decision_tree(df, target_column, attributes, depth=0, max_depth=10, min_samples=1, parent_value=None):
-    """בונה עץ החלטה באמצעות אלגוריתם ID3"""
-
     indent = "  " * depth
     print(f"\n{indent}{BOLD}{YELLOW}{'=' * 20} רמה {depth} {'=' * 20}{RESET}")
 
@@ -198,13 +190,13 @@ def build_decision_tree(df, target_column, attributes, depth=0, max_depth=10, mi
     print(f"{indent}{WHITE}📈 גודל דאטה סט: {len(df)} דוגמאות{RESET}")
     print(f"{indent}{WHITE}🎯 תכונות זמינות: {[shorten_text(attr) for attr in attributes]}{RESET}")
 
-    # יצירת צומת חדש
+    # create new node
     node = DecisionTreeNode(depth=depth, value=parent_value)
     node.samples_count = len(df)
     node.samples_distribution = dict(df[target_column].value_counts())
     node.entropy = calculate_entropy(df[target_column])
 
-    # תנאי עצירה
+    # stop condition
     if is_pure(df, target_column):
         node.classification = df[target_column].iloc[0]
         node.is_leaf = True
@@ -222,25 +214,25 @@ def build_decision_tree(df, target_column, attributes, depth=0, max_depth=10, mi
         print_node_info(node, df, target_column, depth)
         return node
 
-    # בחירת התכונה הטובה ביותר
+    # choose best attribute
     print(f"\n{indent}{BOLD}{MAGENTA}🔍 בחירת התכונה הטובה ביותר:{RESET}")
     best_attribute, best_gain = get_best_attribute(df, attributes, target_column, verbose=True)
 
     node.attribute = best_attribute
     print_node_info(node, df, target_column, depth)
 
-    # חלוקת הענפים לטהורים ולא טהורים
+    # split to pure and impure branches
     print(f"\n{indent}{BOLD}{CYAN}🌟 חלוקה לפי תכונה: '{shorten_text(best_attribute)}'{RESET}")
     remaining_attributes = [attr for attr in attributes if attr != best_attribute]
 
     pure_branches, impure_branches = categorize_branches_by_purity(df, best_attribute, target_column)
 
-    # הצגת סיכום הענפים
+    # summarize
     total_branches = len(pure_branches) + len(impure_branches)
     print(
         f"{indent}{WHITE}📊 סה\"כ תת-ענפים: {total_branches} (טהורים: {len(pure_branches)}, מעורבים: {len(impure_branches)}){RESET}")
 
-    # עיבוד הענפים הטהורים קודם - עם פלט מינימלי
+    # process pure branches first
     branch_counter = 0
     if pure_branches:
         print(f"\n{indent}{BOLD}{GREEN}🍃 ענפים טהורים (לא דורשים חישובים נוספים):{RESET}")
@@ -251,11 +243,10 @@ def build_decision_tree(df, target_column, attributes, depth=0, max_depth=10, mi
                 f"{indent}{GREEN}📋 ענף {branch_counter}/{total_branches}: {shorten_text(best_attribute)} = '{shorten_text(value)}' (טהור){RESET}")
             print(f"{indent}{WHITE}   📊 {len(subset)} דוגמאות - סיווג מוחלט: '{subset[target_column].iloc[0]}'{RESET}")
 
-            # יצירת עלה ישירות מבלי לקרוא לרקורסיה
             child_node = create_leaf_node(subset, target_column, depth + 1, value)
             node.children[value] = child_node
 
-    # עיבוד הענפים הלא טהורים
+    # process impure branches
     if impure_branches:
         print(f"\n{indent}{BOLD}{YELLOW}🔍 ענפים מעורבים (דורשים חישובים נוספים):{RESET}")
         print(f"{indent}{RED}(להסתכל על הטבלה ולחפש אם יש התפלגות ברורה!){RESET}")
@@ -267,8 +258,7 @@ def build_decision_tree(df, target_column, attributes, depth=0, max_depth=10, mi
             distribution = {k: int(v) for k, v in subset[target_column].value_counts().items()}
             print(f"{indent}{WHITE}   📊 {len(subset)} דוגמאות - התפלגות: {distribution}{RESET}")
 
-
-            # בניית תת-עץ רקורסיבית
+            # recursive tree build
             child_node = build_decision_tree(
                 subset, target_column, remaining_attributes,
                 depth + 1, max_depth, min_samples, value
@@ -279,7 +269,6 @@ def build_decision_tree(df, target_column, attributes, depth=0, max_depth=10, mi
 
 
 def print_tree_summary(node, depth=0):
-    """מדפיס סיכום של העץ"""
     indent = "  " * depth
 
     purity = "❌ מעורב"
@@ -295,7 +284,6 @@ def print_tree_summary(node, depth=0):
 
 
 def predict_sample(node, sample):
-    """מבצע חיזוי עבור דוגמה אחת"""
     if node.is_leaf:
         return node.classification
 
@@ -303,34 +291,31 @@ def predict_sample(node, sample):
     if attribute_value in node.children:
         return predict_sample(node.children[attribute_value], sample)
     else:
-        # אם הערך לא נמצא בעץ, נחזיר את הסיווג הרוב מהצומת הנוכחי
+        # predict by majority
         return node.classification if node.classification else "לא ידוע"
 
 
 def clean_data_thoroughly(df):
-    """ניקוי יסודי של הנתונים - מיועד לזמן בחינה כשאין זמן לבדוק ידנית"""
     print(f"{YELLOW}🧹 מבצע ניקוי יסודי של הנתונים...{RESET}")
 
     original_shape = df.shape
 
-    # 1. ניקוי שמות עמודות
-    df.columns = df.columns.astype(str)  # ודא שהכל string
+    # 1. remove formatting in cells
+    df.columns = df.columns.astype(str)  
     df.columns = [
         col.strip()
-        .replace('\u200f', '')  # Right-to-left mark
-        .replace('\u202b', '')  # Right-to-left embedding
-        .replace('\u202c', '')  # Pop directional formatting
-        .replace('\u200e', '')  # Left-to-right mark
-        .replace('\u202a', '')  # Left-to-right embedding
+        .replace('\u200f', '') 
+        .replace('\u202b', '')  
+        .replace('\u202c', '')  
+        .replace('\u200e', '')  
+        .replace('\u202a', '') 
         .replace('\n', ' ')
         .replace('\r', ' ')
         .replace('\t', ' ')
         for col in df.columns
     ]
 
-    # 2. ניקוי ערכים בכל עמודה
     for col in df.columns:
-        # המרה לstring ואז ניקוי
         df[col] = df[col].astype(str)
         df[col] = df[col].apply(lambda x:
                                 x.strip()
@@ -345,52 +330,45 @@ def clean_data_thoroughly(df):
                                 if isinstance(x, str) else str(x)
                                 )
 
-        # טיפול בערכים ריקים או רווחים
+        # replace missing values
         df[col] = df[col].replace(['', ' ', 'nan', 'NaN', 'None'], 'לא ידוע')
 
-    # 3. הסרת שורות ריקות לחלוטין
+    # remove blank row
     df = df.dropna(how='all')
 
-    # 4. הסרת עמודות ריקות לחלוטין
+    # remove blank col
     df = df.dropna(axis=1, how='all')
-
-    # 5. הסרת שורות כפולות
-    #df = df.drop_duplicates()
 
     print(f"{GREEN}✅ ניקוי הושלם: {original_shape} → {df.shape}{RESET}")
 
     return df
 
-
 def validate_data_for_decision_tree(df, target_column):
-    """בדיקות תקינות לפני בניית עץ החלטה"""
     print(f"{CYAN}🔍 בודק תקינות הנתונים...{RESET}")
 
     issues = []
     warnings = []
 
-    # בדיקה 1: עמודת היעד קיימת
+    # check if target col exists
     if target_column not in df.columns:
         issues.append(f"עמודת היעד '{target_column}' לא קיימת!")
         return issues, warnings
 
-    # בדיקה 2: עמודת היעד לא ריקה
+    # check dataset conditions
     target_unique = df[target_column].nunique()
     if target_unique == 0:
         issues.append("עמודת היעד ריקה לחלוטין!")
     elif target_unique == 1:
         warnings.append(f"עמודת היעד כוללת רק ערך אחד: '{df[target_column].iloc[0]}'")
 
-    # בדיקה 3: יש לפחות 2 שורות
     if len(df) < 2:
         issues.append(f"יש רק {len(df)} שורות - צריך לפחות 2")
 
-    # בדיקה 4: יש לפחות עמודה אחת נוספת חוץ מעמודת היעד
     feature_columns = [col for col in df.columns if col != target_column]
     if len(feature_columns) == 0:
         issues.append("אין עמודות תכונות (רק עמודת היעד)")
 
-    # בדיקה 5: בדיקת ערכים חשודים
+    # Look for unique values
     for col in df.columns:
         unique_vals = df[col].nunique()
         total_vals = len(df)
@@ -402,7 +380,7 @@ def validate_data_for_decision_tree(df, target_column):
             warnings.append(
                 f"עמודה '{col}' כוללת {unique_vals} ערכים שונים מתוך {total_vals} - ייתכן שזה לא מתאים לעץ החלטה")
 
-    # דיווח
+    # warnings
     if issues:
         print(f"{RED}❌ בעיות קריטיות שימנעו בניית עץ:{RESET}")
         for issue in issues:
@@ -420,26 +398,25 @@ def validate_data_for_decision_tree(df, target_column):
 
 
 def analyze_excel_and_build_tree(file_path, target_column, max_depth=10, min_samples=1):
-    """פונקציה ראשית לניתוח הקובץ ובניית עץ החלטה"""
     try:
         print(f"{BOLD}{CYAN}🚀 טוען קובץ Excel: {file_path}{RESET}")
         df = pd.read_excel(file_path, engine="openpyxl")
 
-        # ניקוי נתונים יסודי
+        # clean dataset
         df = clean_data_thoroughly(df)
 
         print(f"{GREEN}✅ נטען בהצלחה! {len(df)} שורות, {len(df.columns)} עמודות{RESET}")
         print(f"{WHITE}📋 עמודות: {list(df.columns)}{RESET}")
         print(f"{YELLOW}🎯 עמודת יעד: '{target_column}'{RESET}")
 
-        # בדיקות תקינות
+        # validate dataset
         issues, warnings = validate_data_for_decision_tree(df, target_column)
 
         if issues:
             print(f"{RED}❌ לא ניתן להמשיך בגלל בעיות קריטיות!{RESET}")
             return None, None
 
-        # הכנת רשימת התכונות (כל העמודות חוץ מעמודת היעד)
+        # store attributes
         attributes = [col for col in df.columns if col != target_column]
 
         print(f"\n{BOLD}{MAGENTA}📊 סטטיסטיקות ראשוניות:{RESET}")
@@ -456,7 +433,7 @@ def analyze_excel_and_build_tree(file_path, target_column, max_depth=10, min_sam
         print(f"{BOLD}{RED}🌳 מתחיל בניית עץ החלטה 🌳{RESET}")
         print(f"{THICK_SEPARATOR}")
 
-        # בניית העץ
+        # build decision tree
         tree_root = build_decision_tree(df, target_column, attributes, max_depth=max_depth, min_samples=min_samples)
 
         print(f"\n{THICK_SEPARATOR}")
@@ -477,7 +454,6 @@ def analyze_excel_and_build_tree(file_path, target_column, max_depth=10, min_sam
 
 
 def test_tree_predictions(tree_root, df, target_column, num_samples=5):
-    """בודק את הביצועים של העץ על דוגמאות מהדאטה"""
     print(f"\n{BOLD}{YELLOW}🧪 בדיקת חיזויים על {num_samples} דוגמאות אקראיות:{RESET}")
 
     sample_indices = np.random.choice(len(df), min(num_samples, len(df)), replace=False)
@@ -498,16 +474,15 @@ def test_tree_predictions(tree_root, df, target_column, num_samples=5):
 
 
 if __name__ == "__main__":
-    file_path = "TestData.xlsx"  # שנה את שם הקובץ בהתאם
-    target_column = "חיית מחמד"  # שנה לעמודת היעד שלך
+    file_path = "TestData.xlsx"  # change to the appropriate filename
+    target_column = "x" # change to your target col header 
 
-    # בניית העץ
     tree, df = analyze_excel_and_build_tree(file_path, target_column, max_depth=10, min_samples=1)
 
     if tree and df is not None:
-        # בדיקת חיזויים
         test_tree_predictions(tree, df, target_column, num_samples=5)
 
         print(f"\n{BOLD}{MAGENTA}🎯 העץ מוכן לשימוש! ניתן להשתמש בפונקציה predict_sample() לחיזוי דוגמאות חדשות.{RESET}")
     else:
+
         print(f"{RED}❌ בניית העץ נכשלה. בדוק את הקובץ ואת עמודת היעד.{RESET}")
